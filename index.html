@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Feta Coin</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     /* ===== RESET & BASE ===== */
     * {
@@ -210,6 +211,16 @@
   </div>
 
   <script>
+// Initialize Telegram
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+// Get user's Telegram name
+const user = tg.initDataUnsafe?.user;
+const userName = user ? user.first_name : 'Feta Player';
+document.querySelector('.username').textContent = '👤 ' + userName;
+
     // ===== GAME STATE =====
     // These are the core variables that track the game
     let balance = 0;          // How many coins the player has
