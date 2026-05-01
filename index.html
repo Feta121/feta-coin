@@ -218,31 +218,46 @@ const maxEnergy = 500;
 const coinsPerTap = 1;
 let tapCount = 0;
 
-// ===== LOAD SAVED DATA =====
-// This runs when the app opens and loads the player's saved coins
-function loadData() {
-  tg.CloudStorage.getItems(['balance', 'tapCount', 'energy'], function(err, data) {
-    if (!err && data) {
-      balance = parseInt(data.balance) || 0;
-      tapCount = parseInt(data.tapCount) || 0;
-      energy = parseInt(data.energy) || maxEnergy;
+// ===== SAVE DATA =====
+const API_KEY = '$2a$10$XNUkJe12LcbwjCO/XeKgse2e3CJ2et8rZa0nEJVEopfUmAew57uA2';
+const USER_ID = user ? user.id.toString() : 'guest';
+const BIN_URL = 'https://api.jsonbin.io/v3/b';
 
-      // Update the display with loaded values
-      balanceEl.textContent = formatNumber(balance);
-      tapCountEl.textContent = formatNumber(tapCount);
-      updateEnergyBar();
-    }
-  });
+async function saveData() {
+  try {
+    await fetch(BIN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': API_KEY,
+        'X-Bin-Name': USER_ID
+      },
+      body: JSON.stringify({ balance, tapCount, energy })
+    });
+  } catch(e) {}
 }
 
-// ===== SAVE DATA =====
-// This saves the player's progress to Telegram's cloud
-function saveData() {
-  tg.CloudStorage.setItems({
-    balance: balance.toString(),
-    tapCount: tapCount.toString(),
-    energy: energy.toString()
-  });
+async function loadData() {
+  try {
+    const response = await fetch(`${BIN_URL}?meta=false`, {
+      headers: {
+        'X-Master-Key': API_KEY,
+        'X-Bin-Meta-Search': JSON.stringify({
+          type: 'exact', field: 'name', value: USER_ID
+        })
+      }
+    });
+    const result = await response.json();
+    if (result && result[0]) {
+      const data = result[0].record;
+      balance = data.balance || 0;
+      tapCount = data.tapCount || 0;
+      energy = data.energy || maxEnergy;
+    }
+  } catch(e) {}
+  balanceEl.textContent = formatNumber(balance);
+  tapCountEl.textContent = formatNumber(tapCount);
+  updateEnergyBar();
 }
 
     // ===== GET HTML ELEMENTS =====
