@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Feta Coin</title>
+  <style>
+    /* ===== RESET & BASE ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0f0f1a;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      user-select: none;
+    }
+
+    /* ===== TOP BAR ===== */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    .username {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+
+    .level {
+      font-size: 14px;
+      color: #f5c842;
+    }
+
+    /* ===== COIN BALANCE ===== */
+    .balance-section {
+      margin-top: 80px;
+      text-align: center;
+    }
+
+    .balance-label {
+      font-size: 14px;
+      opacity: 0.5;
+      margin-bottom: 4px;
+    }
+
+    .balance {
+      font-size: 52px;
+      font-weight: bold;
+      color: #f5c842;
+      letter-spacing: -1px;
+    }
+
+    /* ===== COIN BUTTON ===== */
+    .coin-wrapper {
+      margin: 40px 0;
+      position: relative;
+    }
+
+    .coin {
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle at 35% 35%, #ffe066, #f5a623, #c97b00);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+      cursor: pointer;
+      box-shadow: 0 0 40px rgba(245, 168, 35, 0.5), 0 8px 32px rgba(0,0,0,0.4);
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+      border: 4px solid rgba(255,255,255,0.15);
+    }
+
+    .coin:active {
+      transform: scale(0.93);
+      box-shadow: 0 0 20px rgba(245, 168, 35, 0.3);
+    }
+
+    /* Floating +1 text when tapped */
+    .tap-effect {
+      position: absolute;
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffe066;
+      pointer-events: none;
+      animation: floatUp 0.8s ease forwards;
+    }
+
+    @keyframes floatUp {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
+    }
+
+    /* ===== ENERGY BAR ===== */
+    .energy-section {
+      width: 280px;
+      text-align: center;
+    }
+
+    .energy-label {
+      font-size: 13px;
+      opacity: 0.5;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .energy-bar-bg {
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      height: 12px;
+      overflow: hidden;
+    }
+
+    .energy-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4facfe, #00f2fe);
+      border-radius: 20px;
+      transition: width 0.3s ease;
+    }
+
+    /* ===== STATS ROW ===== */
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 30px;
+    }
+
+    .stat-box {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 14px 20px;
+      text-align: center;
+      min-width: 90px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #f5c842;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      opacity: 0.4;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <span class="username">👤 Feta Player</span>
+    <span class="level">⭐ Level 1</span>
+  </div>
+
+  <!-- BALANCE -->
+  <div class="balance-section">
+    <div class="balance-label">YOUR FETA COINS</div>
+    <div class="balance" id="balance">0</div>
+  </div>
+
+  <!-- COIN (THE TAPPABLE BUTTON) -->
+  <div class="coin-wrapper" id="coinWrapper">
+    <div class="coin" id="coin">🧀</div>
+  </div>
+
+  <!-- ENERGY BAR -->
+  <div class="energy-section">
+    <div class="energy-label">
+      <span>⚡ Energy</span>
+      <span id="energyText">500 / 500</span>
+    </div>
+    <div class="energy-bar-bg">
+      <div class="energy-bar-fill" id="energyBar" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-value" id="tapCount">0</div>
+      <div class="stat-label">Total Taps</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="coinsPerTap">1</div>
+      <div class="stat-label">Per Tap</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="regenRate">1/s</div>
+      <div class="stat-label">Regen</div>
+    </div>
+  </div>
+
+  <script>
+    // ===== GAME STATE =====
+    // These are the core variables that track the game
+    let balance = 0;          // How many coins the player has
+    let energy = 500;         // Current energy
+    const maxEnergy = 500;    // Maximum energy allowed
+    const coinsPerTap = 1;    // How many coins each tap gives
+    let tapCount = 0;         // Total number of taps
+
+    // ===== GET HTML ELEMENTS =====
+    // We grab references to the HTML elements so we can update them
+    const balanceEl = document.getElementById('balance');
+    const energyBarEl = document.getElementById('energyBar');
+    const energyTextEl = document.getElementById('energyText');
+    const coinEl = document.getElementById('coin');
+    const coinWrapperEl = document.getElementById('coinWrapper');
+    const tapCountEl = document.getElementById('tapCount');
+
+    // ===== TAP FUNCTION =====
+    // This runs every time the user taps/clicks the coin
+    coinEl.addEventListener('click', function(event) {
+
+      // If no energy left, do nothing
+      if (energy <= 0) {
+        coinEl.style.opacity = '0.4';
+        return;
+      }
+
+      // Add coins and reduce energy
+      balance += coinsPerTap;
+      energy -= 1;
+      tapCount += 1;
+
+      // Update the display
+      balanceEl.textContent = formatNumber(balance);
+      tapCountEl.textContent = formatNumber(tapCount);
+      updateEnergyBar();
+
+      // Show the floating "+1" effect
+      showTapEffect(event);
+
+      // Reset coin opacity in case it was greyed out
+      coinEl.style.opacity = '1';
+    });
+
+    // ===== FLOATING TAP EFFECT =====
+    // Creates the little "+1" that floats up when you tap
+    function showTapEffect(event) {
+      const effect = document.createElement('div');
+      effect.className = 'tap-effect';
+      effect.textContent = '+' + coinsPerTap;
+
+      // Position it near where you tapped
+      const rect = coinWrapperEl.getBoundingClientRect();
+      const x = event.clientX - rect.left - 15;
+      const y = event.clientY - rect.top - 15;
+      effect.style.left = x + 'px';
+      effect.style.top = y + 'px';
+
+      coinWrapperEl.appendChild(effect);
+
+      // Remove the element after animation finishes
+      setTimeout(() => effect.remove(), 800);
+    }
+
+    // ===== UPDATE ENERGY BAR =====
+    function updateEnergyBar() {
+      const percent = (energy / maxEnergy) * 100;
+      energyBarEl.style.width = percent + '%';
+      energyTextEl.textContent = energy + ' / ' + maxEnergy;
+
+      // Change color when energy is low
+      if (percent < 25) {
+        energyBarEl.style.background = 'linear-gradient(90deg, #f83600, #f9d423)';
+      } else {
+        energyBarEl.style.background = 'linear-gradient(90deg, #4facfe, #00f2fe)';
+      }
+    }
+
+    // ===== ENERGY REGENERATION =====
+    // Every second, restore 1 energy (up to max)
+    setInterval(function() {
+      if (energy < maxEnergy) {
+        energy += 1;
+        updateEnergyBar();
+        if (energy > 0) coinEl.style.opacity = '1';
+      }
+    }, 1000);
+
+    // ===== FORMAT LARGE NUMBERS =====
+    // Turns 1000 into "1,000" and 1000000 into "1M"
+    function formatNumber(num) {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+      return num.toString();
+    }
+  </script>
+
+</body>
+</html>
