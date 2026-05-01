@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Feta Coin</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     /* ===== RESET & BASE ===== */
     * {
@@ -210,13 +211,39 @@
   </div>
 
   <script>
-    // ===== GAME STATE =====
-    // These are the core variables that track the game
-    let balance = 0;          // How many coins the player has
-    let energy = 500;         // Current energy
-    const maxEnergy = 500;    // Maximum energy allowed
-    const coinsPerTap = 1;    // How many coins each tap gives
-    let tapCount = 0;         // Total number of taps
+  // ===== GAME STATE =====
+let balance = 0;
+let energy = 500;
+const maxEnergy = 500;
+const coinsPerTap = 1;
+let tapCount = 0;
+
+// ===== LOAD SAVED DATA =====
+// This runs when the app opens and loads the player's saved coins
+function loadData() {
+  tg.CloudStorage.getItems(['balance', 'tapCount', 'energy'], function(err, data) {
+    if (!err && data) {
+      balance = parseInt(data.balance) || 0;
+      tapCount = parseInt(data.tapCount) || 0;
+      energy = parseInt(data.energy) || maxEnergy;
+
+      // Update the display with loaded values
+      balanceEl.textContent = formatNumber(balance);
+      tapCountEl.textContent = formatNumber(tapCount);
+      updateEnergyBar();
+    }
+  });
+}
+
+// ===== SAVE DATA =====
+// This saves the player's progress to Telegram's cloud
+function saveData() {
+  tg.CloudStorage.setItems({
+    balance: balance.toString(),
+    tapCount: tapCount.toString(),
+    energy: energy.toString()
+  });
+}
 
     // ===== GET HTML ELEMENTS =====
     // We grab references to the HTML elements so we can update them
@@ -246,6 +273,7 @@
       balanceEl.textContent = formatNumber(balance);
       tapCountEl.textContent = formatNumber(tapCount);
       updateEnergyBar();
+      saveData();
 
       // Show the floating "+1" effect
       showTapEffect(event);
@@ -295,6 +323,7 @@
         energy += 1;
         updateEnergyBar();
         if (energy > 0) coinEl.style.opacity = '1';
+        if (Date.now() % 10000 < 1000) saveData();
       }
     }, 1000);
 
@@ -305,6 +334,16 @@
       if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
       return num.toString();
     }
+  // Initialize Telegram
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+// Get user's Telegram name
+const user = tg.initDataUnsafe?.user;
+const userName = user ? user.first_name : 'Feta Player';
+document.querySelector('.username').textContent = '👤 ' + userName;
+loadData();
   </script>
 
 </body>
