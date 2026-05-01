@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Feta Coin</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    /* ===== RESET & BASE ===== */
     * {
       margin: 0;
       padding: 0;
@@ -24,6 +24,7 @@
       user-select: none;
     }
 
+    /* ===== TOP BAR ===== */
     .top-bar {
       position: fixed;
       top: 0;
@@ -45,6 +46,7 @@
       color: #f5c842;
     }
 
+    /* ===== COIN BALANCE ===== */
     .balance-section {
       margin-top: 80px;
       text-align: center;
@@ -63,6 +65,7 @@
       letter-spacing: -1px;
     }
 
+    /* ===== COIN BUTTON ===== */
     .coin-wrapper {
       margin: 40px 0;
       position: relative;
@@ -88,6 +91,7 @@
       box-shadow: 0 0 20px rgba(245, 168, 35, 0.3);
     }
 
+    /* Floating +1 text when tapped */
     .tap-effect {
       position: absolute;
       font-size: 28px;
@@ -102,6 +106,7 @@
       100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
     }
 
+    /* ===== ENERGY BAR ===== */
     .energy-section {
       width: 280px;
       text-align: center;
@@ -129,6 +134,7 @@
       transition: width 0.3s ease;
     }
 
+    /* ===== STATS ROW ===== */
     .stats-row {
       display: flex;
       gap: 16px;
@@ -159,20 +165,24 @@
 </head>
 <body>
 
+  <!-- TOP BAR -->
   <div class="top-bar">
     <span class="username">👤 Feta Player</span>
     <span class="level">⭐ Level 1</span>
   </div>
 
+  <!-- BALANCE -->
   <div class="balance-section">
     <div class="balance-label">YOUR FETA COINS</div>
     <div class="balance" id="balance">0</div>
   </div>
 
+  <!-- COIN (THE TAPPABLE BUTTON) -->
   <div class="coin-wrapper" id="coinWrapper">
     <div class="coin" id="coin">🧀</div>
   </div>
 
+  <!-- ENERGY BAR -->
   <div class="energy-section">
     <div class="energy-label">
       <span>⚡ Energy</span>
@@ -183,6 +193,7 @@
     </div>
   </div>
 
+  <!-- STATS -->
   <div class="stats-row">
     <div class="stat-box">
       <div class="stat-value" id="tapCount">0</div>
@@ -199,89 +210,16 @@
   </div>
 
   <script>
-    // ===== STEP 1: TELEGRAM INIT FIRST (must be before everything else) =====
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+    // ===== GAME STATE =====
+    // These are the core variables that track the game
+    let balance = 0;          // How many coins the player has
+    let energy = 500;         // Current energy
+    const maxEnergy = 500;    // Maximum energy allowed
+    const coinsPerTap = 1;    // How many coins each tap gives
+    let tapCount = 0;         // Total number of taps
 
-    const user = tg.initDataUnsafe?.user;
-    const userName = user ? user.first_name : 'Feta Player';
-    document.querySelector('.username').textContent = '👤 ' + userName;
-
-    // ===== STEP 2: GAME STATE =====
-    let balance = 0;
-    let energy = 500;
-    const maxEnergy = 500;
-    const coinsPerTap = 1;
-    let tapCount = 0;
-
-    // ===== STEP 3: JSONBIN SAVE/LOAD =====
-    const API_KEY = '$2a$10$XNUkJe12LcbwjCO/XeKgse2e3CJ2et8rZa0nEJVEopfUmAew57uA2'; // ← paste your JSONBin key here in VS Code only!
-    const USER_ID = user ? user.id.toString() : 'guest';
-    const BIN_URL = 'https://api.jsonbin.io/v3/b';
-    let userBinId = null; // stores the bin ID after first save
-
-    async function saveData() {
-      try {
-        if (userBinId) {
-          // Update existing bin
-          await fetch(`${BIN_URL}/${userBinId}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Master-Key': API_KEY
-            },
-            body: JSON.stringify({ balance, tapCount, energy, userId: USER_ID })
-          });
-        } else {
-          // Create new bin
-          const response = await fetch(BIN_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Master-Key': API_KEY,
-              'X-Bin-Name': USER_ID,
-              'X-Bin-Private': 'false'
-            },
-            body: JSON.stringify({ balance, tapCount, energy, userId: USER_ID })
-          });
-          const result = await response.json();
-          if (result.metadata) {
-            userBinId = result.metadata.id;
-            localStorage.setItem('feta_bin_' + USER_ID, userBinId);
-          }
-        }
-      } catch(e) {
-        console.log('Save error:', e);
-      }
-    }
-
-    async function loadData() {
-      try {
-        // Check if we have a saved bin ID locally
-        const savedBinId = localStorage.getItem('feta_bin_' + USER_ID);
-        if (savedBinId) {
-          userBinId = savedBinId;
-          const response = await fetch(`${BIN_URL}/${userBinId}/latest`, {
-            headers: { 'X-Master-Key': API_KEY }
-          });
-          const result = await response.json();
-          if (result.record) {
-            balance = result.record.balance || 0;
-            tapCount = result.record.tapCount || 0;
-            energy = result.record.energy || maxEnergy;
-          }
-        }
-      } catch(e) {
-        console.log('Load error:', e);
-      }
-      // Update display after loading
-      balanceEl.textContent = formatNumber(balance);
-      tapCountEl.textContent = formatNumber(tapCount);
-      updateEnergyBar();
-    }
-
-    // ===== STEP 4: GET HTML ELEMENTS =====
+    // ===== GET HTML ELEMENTS =====
+    // We grab references to the HTML elements so we can update them
     const balanceEl = document.getElementById('balance');
     const energyBarEl = document.getElementById('energyBar');
     const energyTextEl = document.getElementById('energyText');
@@ -289,32 +227,41 @@
     const coinWrapperEl = document.getElementById('coinWrapper');
     const tapCountEl = document.getElementById('tapCount');
 
-    // ===== STEP 5: TAP FUNCTION =====
+    // ===== TAP FUNCTION =====
+    // This runs every time the user taps/clicks the coin
     coinEl.addEventListener('click', function(event) {
+
+      // If no energy left, do nothing
       if (energy <= 0) {
         coinEl.style.opacity = '0.4';
         return;
       }
 
+      // Add coins and reduce energy
       balance += coinsPerTap;
       energy -= 1;
       tapCount += 1;
 
+      // Update the display
       balanceEl.textContent = formatNumber(balance);
       tapCountEl.textContent = formatNumber(tapCount);
       updateEnergyBar();
-      saveData();
 
+      // Show the floating "+1" effect
       showTapEffect(event);
+
+      // Reset coin opacity in case it was greyed out
       coinEl.style.opacity = '1';
     });
 
     // ===== FLOATING TAP EFFECT =====
+    // Creates the little "+1" that floats up when you tap
     function showTapEffect(event) {
       const effect = document.createElement('div');
       effect.className = 'tap-effect';
       effect.textContent = '+' + coinsPerTap;
 
+      // Position it near where you tapped
       const rect = coinWrapperEl.getBoundingClientRect();
       const x = event.clientX - rect.left - 15;
       const y = event.clientY - rect.top - 15;
@@ -322,6 +269,8 @@
       effect.style.top = y + 'px';
 
       coinWrapperEl.appendChild(effect);
+
+      // Remove the element after animation finishes
       setTimeout(() => effect.remove(), 800);
     }
 
@@ -331,6 +280,7 @@
       energyBarEl.style.width = percent + '%';
       energyTextEl.textContent = energy + ' / ' + maxEnergy;
 
+      // Change color when energy is low
       if (percent < 25) {
         energyBarEl.style.background = 'linear-gradient(90deg, #f83600, #f9d423)';
       } else {
@@ -339,6 +289,7 @@
     }
 
     // ===== ENERGY REGENERATION =====
+    // Every second, restore 1 energy (up to max)
     setInterval(function() {
       if (energy < maxEnergy) {
         energy += 1;
@@ -348,15 +299,13 @@
     }, 1000);
 
     // ===== FORMAT LARGE NUMBERS =====
+    // Turns 1000 into "1,000" and 1000000 into "1M"
     function formatNumber(num) {
       if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
       if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
       return num.toString();
     }
-
-    // ===== STEP 6: LOAD DATA ON START =====
-    loadData();
-
   </script>
+
 </body>
 </html>
